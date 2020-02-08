@@ -158,7 +158,7 @@ def get_multi_class_labels(data, n_labels, labels=None):
     :param labels: integer values of the labels.
     :return: binary numpy array of shape: (n_samples, n_labels, ...)
     """
-    new_shape = [data.shape[0], n_labels] + list(data.shape[2:])
+    new_shape = [data.shape[0], n_labels] + list(data.shape[-3:])
     y = torch.zeros(new_shape)
 
     for label_index in range(n_labels):
