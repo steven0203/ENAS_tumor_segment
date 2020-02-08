@@ -185,7 +185,7 @@ def get_time():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def get_logger(name=__file__, level=logging.INFO):
+def get_logger(name=__file__, level=logging.INFO,to_file=False):
     logger = logging.getLogger(name)
 
     if getattr(logger, '_init_done__', None):
@@ -201,25 +201,26 @@ def get_logger(name=__file__, level=logging.INFO):
     handler.setFormatter(formatter)
     handler.setLevel(0)
 
-    name=get_time()
-    handler2 = logging.FileHandler(name+'.log','w',encoding='utf-8')
-    handler2.setFormatter(formatter)
-    handler2.setLevel(0)
+    if to_file:
+        name=get_time()
+        handler2 = logging.FileHandler(name+'.log','w',encoding='utf-8')
+        handler2.setFormatter(formatter)
+        handler2.setLevel(0)
 
 
 
 
     del logger.handlers[:]
     logger.addHandler(handler)
-    logger.addHandler(handler2)
+    if to_file:
+        logger.addHandler(handler2)
 
     return logger
 
 
-logger = get_logger()
 
 
-def prepare_dirs(args):
+def prepare_dirs(args,logger):
     """Sets the directories for the model, and creates those directories.
 
     Args:
@@ -241,10 +242,10 @@ def prepare_dirs(args):
 
     for path in [args.log_dir, args.data_dir, args.model_dir]:
         if not os.path.exists(path):
-            makedirs(path)
+            makedirs(path,logger)
 
 
-def save_args(args):
+def save_args(args,logger):
     param_path = os.path.join(args.model_dir, "params.json")
 
     logger.info("[*] MODEL dir: %s" % args.model_dir)
@@ -253,32 +254,32 @@ def save_args(args):
     with open(param_path, 'w') as fp:
         json.dump(args.__dict__, fp, indent=4, sort_keys=True)
 
-def save_dag(args, dag, name):
+def save_dag(args, dag, name,logger):
     save_path = os.path.join(args.model_dir, name)
     logger.info("[*] Save dag : {}".format(save_path))
     json.dump(dag, open(save_path, 'w'))
 
-def load_dag(args):
+def load_dag(args,logger):
     load_path = os.path.join(args.dag_path)
     logger.info("[*] Load dag : {}".format(load_path))
     with open(load_path) as f:
         dag = json.load(f)
     dag = {int(k): [Node(el[0], el[1]) for el in v] for k, v in dag.items()}
-    save_dag(args, dag, "dag.json")
+    save_dag(args, dag, "dag.json",logger)
     #draw_network(dag, os.path.join(args.model_dir, "dag.png"))
     return dag          
   
-def makedirs(path):
+def makedirs(path,logger):
     if not os.path.exists(path):
         logger.info("[*] Make directories : {}".format(path))
         os.makedirs(path)
 
-def remove_file(path):
+def remove_file(path,logger):
     if os.path.exists(path):
         logger.info("[*] Removed: {}".format(path))
         os.remove(path)
 
-def backup_file(path):
+def backup_file(path,logger):
     root, ext = os.path.splitext(path)
     new_path = "{}.backup_{}{}".format(root, get_time(), ext)
 

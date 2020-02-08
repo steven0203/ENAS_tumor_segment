@@ -8,12 +8,12 @@ import utils
 import trainer
 import pickle
 
-logger = utils.get_logger()
+logger = utils.get_logger(to_file=True)
 
 
 def main(args):  # pylint:disable=redefined-outer-name
     """main: Entry point."""
-    utils.prepare_dirs(args)
+    utils.prepare_dirs(args,logger)
 
     torch.manual_seed(args.random_seed)
 
@@ -26,21 +26,17 @@ def main(args):  # pylint:disable=redefined-outer-name
     trnr = trainer.Trainer(args)
 
     if args.mode == 'train':
-        utils.save_args(args)
+        utils.save_args(args,logger)
         trnr.train()
     elif args.mode == 'derive':
         assert args.load_path != "", ("`--load_path` should be given in "
                                       "`derive` mode")
         trnr.derive_final()
-    elif args.mode == 'test':
-        if not args.load_path:
-            raise Exception("[!] You should specify `load_path` to load a "
-                            "pretrained model")
-        trnr.test()
+
     elif args.mode == 'single':
         if not args.dag_path:
             raise Exception("[!] You should specify `dag_path` to load a dag")
-        utils.save_args(args)
+        utils.save_args(args,logger)
         trnr.train(single=True)
     else:
         raise Exception(f"[!] Mode not found: {args.mode}")

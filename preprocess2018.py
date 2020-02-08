@@ -12,7 +12,6 @@ except ImportError:
     print("You need to have SimpleITK installed to run this example!")
     raise ImportError("SimpleITK not found")
 
-
 data_folder='../data/MICCAI_BraTS_2018_Data_Training'
 preprocessed_data_folder='BRATS2018_precessed' 
 train_ids_path='train_ids.pkl'

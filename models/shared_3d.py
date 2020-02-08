@@ -7,9 +7,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from models.shared_base import *
-from utils import get_logger, get_variable, keydefaultdict
 
-logger = get_logger()
 
 
 def init_weight(idx , action , in_channels ,filters):

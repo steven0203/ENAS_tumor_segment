@@ -21,7 +21,6 @@ import pickle
 import random
 import time
 
-logger = utils.get_logger()
 
 
 
@@ -51,7 +50,7 @@ def _get_no_grad_ctx_mgr():
 
 class Trainer(object):
     """A class to wrap training code."""
-    def __init__(self, args):
+    def __init__(self, args,logger):
         """Constructor for training algorithm.
 
         Args:
@@ -69,7 +68,7 @@ class Trainer(object):
         self.epoch = 0
         self.shared_step = 0
         self.start_epoch = 0
-
+        self.logger=logger
         """Load dataset""" 
         self.load_dataset()
         if args.mode=='train':
@@ -398,7 +397,7 @@ class Trainer(object):
         self.tb.scalar_summary(f'eval/{name}_loss', val_loss, self.epoch)
         self.tb.scalar_summary(f'eval/{name}_dice_score', dice_score, self.epoch)
         """
-        logger.info(f'eval | loss: {val_loss:8.2f} | dice_score: {dice_score:8.2f}')
+        self.logger.info(f'eval | loss: {val_loss:8.2f} | dice_score: {dice_score:8.2f}')
         return dice_score
 
     def derive(self, sample_num=None, valid_idx=0):
@@ -430,7 +429,7 @@ class Trainer(object):
                 best_dag = dag
         self.dag_file.write('best_dag :'+str(best_dag)+'\n')
         self.dag_file.flush()
-        logger.info(f'derive | max_R: {max_R:8.6f}')
+        self.logger.info(f'derive | max_R: {max_R:8.6f}')
         #fname = (f'{self.epoch:03d}-{self.controller_step:06d}-'
         #         f'{max_R:6.4f}-best.png')
         #path = os.path.join(self.args.model_dir, 'networks', fname)
@@ -504,10 +503,10 @@ class Trainer(object):
 
     def save_model(self):
         torch.save(self.shared.state_dict(), self.shared_path)
-        logger.info(f'[*] SAVED: {self.shared_path}')
+        self.logger.info(f'[*] SAVED: {self.shared_path}')
 
         torch.save(self.controller.state_dict(), self.controller_path)
-        logger.info(f'[*] SAVED: {self.controller_path}')
+        self.logger.info(f'[*] SAVED: {self.controller_path}')
 
         epochs, shared_steps, controller_steps = self.get_saved_models_info()
 
@@ -522,7 +521,7 @@ class Trainer(object):
         epochs, shared_steps, controller_steps = self.get_saved_models_info()
 
         if len(epochs) == 0:
-            logger.info(f'[!] No checkpoint found in {self.args.model_dir}...')
+            self.logger.info(f'[!] No checkpoint found in {self.args.model_dir}...')
             return
 
         self.epoch = self.start_epoch = max(epochs)
@@ -536,11 +535,11 @@ class Trainer(object):
 
         self.shared.load_state_dict(
             torch.load(self.shared_path, map_location=map_location))
-        logger.info(f'[*] LOADED: {self.shared_path}')
+        self.logger.info(f'[*] LOADED: {self.shared_path}')
 
         self.controller.load_state_dict(
             torch.load(self.controller_path, map_location=map_location))
-        logger.info(f'[*] LOADED: {self.controller_path}')
+        self.logger.info(f'[*] LOADED: {self.controller_path}')
 
     def _summarize_controller_train(self,
                                     total_loss,
@@ -558,7 +557,7 @@ class Trainer(object):
         if avg_reward_base is None:
             avg_reward_base = avg_reward
 
-        logger.info(
+        self.logger.info(
             f'| epoch {self.epoch:3d} | lr {self.controller_lr:.5f} '
             f'| R {avg_reward:.5f} | entropy {avg_entropy:.4f} '
             f'| loss {cur_loss:.5f}')
@@ -599,7 +598,7 @@ class Trainer(object):
         # regularization terms, should be used to compute ppl.
         cur_raw_loss = utils.to_item(raw_total_loss) / self.args.log_step
 
-        logger.info(f'| epoch {self.epoch:3d} '
+        self.logger.info(f'| epoch {self.epoch:3d} '
                     f'| lr {self.shared_lr:4.2f} '
                     f'| raw loss {cur_raw_loss:.2f} '
                     f'| loss {cur_loss:.2f} ')
