@@ -317,6 +317,7 @@ class Trainer(object):
 
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1)
         num_validation_batches_per_epoch=int(math.ceil(len(self.val)/self.args.batch_size))
+        print('Train Controller:')
         for step in range(num_validation_batches_per_epoch):
             if step>self.args.controller_max_step:
                 break
@@ -336,7 +337,7 @@ class Trainer(object):
                 #print('momery',torch.cuda.memory_allocated(device=None))
                 rewards = self.get_reward(dags,np_entropies,inputs,targets)
                 #print('after model momery',torch.cuda.memory_allocated(device=None))
-
+            print(dags[0])
             # discount
             if 1 > self.args.discount > 0:
                 rewards = discount(rewards, self.args.discount)
