@@ -1,4 +1,3 @@
-from models.shared_rnn import RNN
 from models.shared_3d import Unet
 from models.controller import Controller
 from models.Isensee2017 import isensee2017_model

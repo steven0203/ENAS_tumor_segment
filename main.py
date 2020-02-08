@@ -8,11 +8,12 @@ import utils
 import trainer
 import pickle
 
-logger = utils.get_logger(to_file=True)
 
 
 def main(args):  # pylint:disable=redefined-outer-name
     """main: Entry point."""
+    logger = utils.get_logger(to_file=True)
+
     utils.prepare_dirs(args,logger)
 
     torch.manual_seed(args.random_seed)

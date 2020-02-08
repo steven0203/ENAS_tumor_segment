@@ -185,13 +185,9 @@ def get_time():
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def get_logger(name=__file__, level=logging.INFO,to_file=False):
-    logger = logging.getLogger(name)
-
-    if getattr(logger, '_init_done__', None):
-        logger.setLevel(level)
-        return logger
-
+def get_logger(to_file=False):
+    logger = logging.getLogger(__file__)
+    level=logging.INFO
     logger._init_done__ = True
     logger.propagate = False
     logger.setLevel(level)
@@ -200,8 +196,7 @@ def get_logger(name=__file__, level=logging.INFO,to_file=False):
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     handler.setLevel(0)
-
-    if to_file:
+    if to_file==True:
         name=get_time()
         handler2 = logging.FileHandler(name+'.log','w',encoding='utf-8')
         handler2.setFormatter(formatter)
@@ -212,7 +207,7 @@ def get_logger(name=__file__, level=logging.INFO,to_file=False):
 
     del logger.handlers[:]
     logger.addHandler(handler)
-    if to_file:
+    if to_file==True:
         logger.addHandler(handler2)
 
     return logger
