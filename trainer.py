@@ -11,7 +11,7 @@ from torch import nn
 import torch.nn.parallel
 from torch.autograd import Variable
 from torch.utils.data import Dataset,DataLoader
-from loss import DiceLoss,MulticlassDiceLoss
+from loss import DiceLoss,MulticlassDiceLoss,DiceScore
 from brats_dataloader import *
 from batchgenerators.dataloading import MultiThreadedAugmenter
 
@@ -157,7 +157,7 @@ class Trainer(object):
             single (bool): If True it won't train the controller and use the
                            same dag instead of derive().
         """
-        dag = utils.load_dag(self.args) if single else None
+        dag = utils.load_dag(self.args,self.logger) if single else None
         
         if self.args.shared_initial_step > 0:
             self.train_shared(self.args.shared_initial_step)
@@ -210,8 +210,10 @@ class Trainer(object):
         for dag in dags:
             outputs = self.shared(inputs, dag)
             outputs = torch.argmax(outputs,dim=1)
-            outputs = get_multi_class_labels(outputs,self.args.n_classes)
-            score += self.model_loss(outputs,targets)
+            outputs = torch.unsqueeze(outputs,dim=1)
+            outputs = get_multi_class_labels(outputs,self.args.n_classes).cuda()
+            
+            score += DiceScore(outputs,targets)
         
         return score/len(dags)
 
@@ -277,6 +279,7 @@ class Trainer(object):
             entropies = entropies.data.cpu().numpy()
 
         score=self.get_score(inputs,targets,dags)
+        print(score.item())
         R = utils.to_item(score.data)
 
         if self.args.entropy_mode == 'reward':
@@ -316,11 +319,8 @@ class Trainer(object):
         valid_idx = 0
 
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1)
-        num_validation_batches_per_epoch=int(math.ceil(len(self.val)/self.args.batch_size))
         print('Train Controller:')
-        for step in range(num_validation_batches_per_epoch):
-            if step>self.args.controller_max_step:
-                break
+        for step in range(self.args.controller_max_step):
             # sample models
             dags, log_probs, entropies = self.controller.sample(
                 with_details=True)
@@ -404,8 +404,8 @@ class Trainer(object):
             targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
             
             loss = self.get_loss(inputs,targets,dag)
-            val_loss += uitls.to_item(loss)
-            dice_score +=uitls.to_item(self.get_score(inputs,targets,dag))
+            val_loss += utils.to_item(loss)
+            dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
 
         val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
@@ -440,13 +440,13 @@ class Trainer(object):
         for dag in dags:
             dag=[dag]
             score = self.get_score(inputs,targets,dag)
-            self.dag_file.write(str(dag)+'\n'+str(score.item()))
+            self.dag_file.write(str(dag)+' '+str(score.item())+'\n')
             if score > max_score:
-                max_score = score
+                max_score = score.item()
                 best_dag = dag
-        self.dag_file.write('best_dag :'+str(best_dag)+'\n'+str(max_score))
+        self.dag_file.write('best_dag :'+str(best_dag)+' '+str(max_score)+'\n')
         self.dag_file.flush()
-        self.logger.info(f'derive | max_score: {max_R:8.6f}')
+        self.logger.info(f'derive | max_score: {max_score:8.6f}')
         #fname = (f'{self.epoch:03d}-{self.controller_step:06d}-'
         #         f'{max_R:6.4f}-best.png')
         #path = os.path.join(self.args.model_dir, 'networks', fname)
@@ -532,7 +532,7 @@ class Trainer(object):
                 os.path.join(self.args.model_dir, f'*_epoch{epoch}_*.pth'))
 
             for path in paths:
-                utils.remove_file(path)
+                utils.remove_file(path,self.logger)
 
     def load_model(self):
         epochs, shared_steps, controller_steps = self.get_saved_models_info()

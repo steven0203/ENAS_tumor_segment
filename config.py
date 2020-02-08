@@ -49,7 +49,7 @@ learn_arg.add_argument('--mode', type=str, default='train',
                        choices=['train', 'derive', 'test', 'single'],
                        help='train: Training ENAS, derive: Deriving Architectures,\
                        single: training one dag')
-learn_arg.add_argument('--batch_size', type=int, default=2)
+learn_arg.add_argument('--batch_size', type=int, default=1)
 learn_arg.add_argument('--test_batch_size', type=int, default=2)
 learn_arg.add_argument('--max_epoch', type=int, default=300)
 learn_arg.add_argument('--entropy_mode', type=str, default='reward', choices=['reward', 'regularizer'])

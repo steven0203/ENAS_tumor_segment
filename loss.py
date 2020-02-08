@@ -21,17 +21,24 @@ class DiceLoss(nn.Module):
         return loss
 
 def DiceScore(input,target):
-    N = target.size(0)
-    smooth = 1
+    C = target.shape[1]
+    
+    total_score = 0
+    for i in range(C):
+        N = target.size(0)
+        smooth = 1
  
-    input_flat = input.view(N, -1)
-    target_flat = target.view(N, -1)
+        input_flat = input[:,i].view(N, -1)
+        target_flat = target[:,i].view(N, -1)
 
-    intersection = input_flat * target_flat
+        intersection = input_flat * target_flat
         
-    score = (2*intersection.sum(1) + smooth) / (input_flat.sum(1) + target_flat.sum(1) + smooth)
-    score = score.sum()/N      
+        score = (2*intersection.sum(1) + smooth) / (input_flat.sum(1) + target_flat.sum(1) + smooth)
+        score = score.sum()/N
+        total_score=total_score+score
+    total_score=total_score/C
     return score
+
 
 class MulticlassDiceLoss(nn.Module):
 
