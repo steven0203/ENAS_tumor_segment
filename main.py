@@ -23,7 +23,7 @@ def main(args):  # pylint:disable=redefined-outer-name
     if args.dataset != 'tumor':
         raise NotImplementedError(f"{args.dataset} is not supported")
 
-    trnr = trainer.Trainer(args)
+    trnr = trainer.Trainer(args,logger)
 
     if args.mode == 'train':
         utils.save_args(args,logger)
