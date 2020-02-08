@@ -198,7 +198,23 @@ class Trainer(object):
                            self.args.shared_num_sample)
             loss += sample_loss
 
+        loss =loss/len(dags)
+
         return loss
+
+    def get_score(self,inputs,targets,dags):
+        if not isinstance(dags, list):
+            dags = [dags]
+
+        score=0
+        for dag in dags:
+            outputs = self.shared(inputs, dag)
+            outputs = torch.argmax(outputs,dim=1)
+            outputs = get_multi_class_labels(outputs,self.args.n_classes)
+            score += self.model_loss(outputs,targets)
+        
+        return score/len(dags)
+
 
     def train_shared(self, dag=None):
         """Train the language model for 400 steps of minibatches of 64
@@ -231,12 +247,12 @@ class Trainer(object):
             
             print('epoch :',self.epoch,'step :', step, 'time:' ,time.time()-self.time)
             print(dags[0])
-            print('momery',torch.cuda.memory_allocated(device=None))
+            #print('momery',torch.cuda.memory_allocated(device=None))
 
             loss = self.get_loss(inputs,targets,dags)
             raw_total_loss += loss.data
             
-            print('after model momery',torch.cuda.memory_allocated(device=None))
+            #print('after model momery',torch.cuda.memory_allocated(device=None))
             print('loss :', loss.item())
 
 
@@ -253,15 +269,15 @@ class Trainer(object):
                 total_loss = 0
 
 
-    def get_reward(self, dag, entropies,inputs,targets):
+    def get_reward(self, dags, entropies,inputs,targets):
         """Computes the dicescore of a single sampled model on a minibatch of
         validation data.
         """
         if not isinstance(entropies, np.ndarray):
             entropies = entropies.data.cpu().numpy()
 
-        valid_loss = 1-self.get_loss(inputs, targets, dag)
-        R = utils.to_item(valid_loss.data)
+        score=self.get_score(inputs,targets,dags)
+        R = utils.to_item(score.data)
 
         if self.args.entropy_mode == 'reward':
             rewards = R + self.args.entropy_coeff * entropies
@@ -317,9 +333,9 @@ class Trainer(object):
                 inputs=torch.from_numpy(batch['data']).cuda()
                 targets=torch.from_numpy(batch['seg'].astype(int))
                 targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
-                print('momery',torch.cuda.memory_allocated(device=None))
+                #print('momery',torch.cuda.memory_allocated(device=None))
                 rewards = self.get_reward(dags,np_entropies,inputs,targets)
-                print('after model momery',torch.cuda.memory_allocated(device=None))
+                #print('after model momery',torch.cuda.memory_allocated(device=None))
 
             # discount
             if 1 > self.args.discount > 0:
@@ -387,8 +403,8 @@ class Trainer(object):
             targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
             
             loss = self.get_loss(inputs,targets,dag)
-            val_loss += utils.to_item(loss)
-            dice_score += 1-utils.to_item(loss)
+            val_loss += uitls.to_item(loss)
+            dice_score +=uitls.to_item(self.get_score(inputs,targets,dag))
 
         val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
@@ -410,7 +426,7 @@ class Trainer(object):
         dags, _, entropies = self.controller.sample(sample_num,
                                                     with_details=True)
 
-        max_R = 0
+        max_score = 0
         best_dag = None
 
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1)
@@ -421,15 +437,15 @@ class Trainer(object):
 
         self.dag_file.write('Epoch : %i \n' %self.epoch)
         for dag in dags:
-            self.dag_file.write(str(dag)+'\n')
             dag=[dag]
-            R = self.get_reward(dag, entropies,inputs,targets)
-            if R.max() > max_R:
-                max_R = R.max()
+            score = self.get_score(inputs,targets,dag)
+            self.dag_file.write(str(dag)+'\n'+str(score.item()))
+            if score > max_score:
+                max_score = score
                 best_dag = dag
-        self.dag_file.write('best_dag :'+str(best_dag)+'\n')
+        self.dag_file.write('best_dag :'+str(best_dag)+'\n'+str(max_score))
         self.dag_file.flush()
-        self.logger.info(f'derive | max_R: {max_R:8.6f}')
+        self.logger.info(f'derive | max_score: {max_R:8.6f}')
         #fname = (f'{self.epoch:03d}-{self.controller_step:06d}-'
         #         f'{max_R:6.4f}-best.png')
         #path = os.path.join(self.args.model_dir, 'networks', fname)
