@@ -41,7 +41,14 @@ class Controller(torch.nn.Module):
 
         self.encoder = torch.nn.Embedding(num_total_tokens,
                                           args.controller_hid)
-        self.lstm = torch.nn.LSTMCell(args.controller_hid, args.controller_hid)
+
+        
+        self.lstm = []
+        for i in range(self.args.lstm_layer):
+            self.lstm.append(torch.nn.LSTMCell(args.controller_hid, args.controller_hid))
+
+
+        #self.lstm = torch.nn.LSTMCell(args.controller_hid, args.controller_hid)
 
         # TODO(brendan): Perhaps these weights in the decoder should be
         # shared? At least for the activation functions, which all have the
@@ -82,8 +89,12 @@ class Controller(torch.nn.Module):
             embed = self.encoder(inputs)
         else:
             embed = inputs
-
-        hx, cx = self.lstm(embed, hidden)
+        
+        return_hidden=[]
+        hx=embed
+        for i in range(self.args.lstm_layer):
+            hx, cx = self.lstm[i](hx, hidden[i])
+            return_hidden.append((hx,cx))
         logits = self.decoders[block_idx](hx)
 
         logits /= self.args.softmax_temperature
@@ -92,7 +103,7 @@ class Controller(torch.nn.Module):
         if self.args.mode == 'train':
             logits = (self.args.tanh_c*F.tanh(logits))
 
-        return logits, (hx, cx)
+        return logits, return_hidden
 
     def sample(self, batch_size=1, with_details=False, save_dir=None):
         """Samples a set of `args.num_blocks` many computational nodes from the
@@ -104,7 +115,7 @@ class Controller(torch.nn.Module):
 
         # [B, L, H]
         inputs = self.static_inputs[batch_size]
-        hidden = self.static_init_hidden[batch_size]
+        hidden = [self.static_init_hidden[batch_size] for i in self.args.lstm_layer]
 
         activations = []
         entropies = []
@@ -159,9 +170,11 @@ class Controller(torch.nn.Module):
 
         if save_dir is not None:
             for idx, dag in enumerate(dags):
+                """
                 utils.draw_network(dag,
                                    os.path.join(save_dir, f'graph{idx}.png'))
-
+                """
+                pass
         if with_details:
             return dags, torch.cat(log_probs), torch.cat(entropies)
 
@@ -171,3 +184,4 @@ class Controller(torch.nn.Module):
         zeros = torch.zeros(batch_size, self.args.controller_hid)
         return (utils.get_variable(zeros, self.args.cuda, requires_grad=False),
                 utils.get_variable(zeros.clone(), self.args.cuda, requires_grad=False))
+
