@@ -49,7 +49,7 @@ learn_arg.add_argument('--mode', type=str, default='train',
                        choices=['train', 'derive', 'test', 'single'],
                        help='train: Training ENAS, derive: Deriving Architectures,\
                        single: training one dag')
-learn_arg.add_argument('--batch_size', type=int, default=1)
+learn_arg.add_argument('--batch_size', type=int, default=2)
 learn_arg.add_argument('--test_batch_size', type=int, default=2)
 learn_arg.add_argument('--max_epoch', type=int, default=300)
 learn_arg.add_argument('--entropy_mode', type=str, default='reward', choices=['reward', 'regularizer'])
@@ -88,9 +88,9 @@ learn_arg.add_argument('--shared_num_sample', type=int, default=1,
                        help='# of Monte Carlo samples')
 learn_arg.add_argument('--shared_optim', type=str, default='adam')
 learn_arg.add_argument('--shared_lr', type=float, default=0.001)
-learn_arg.add_argument('--shared_decay', type=float, default=0.96)
+learn_arg.add_argument('--shared_decay', type=float, default=0.985)
 learn_arg.add_argument('--shared_decay_after', type=float, default=15)
-learn_arg.add_argument('--shared_l2_reg', type=float, default=1e-7)
+learn_arg.add_argument('--shared_l2_reg', type=float, default=5e-5)
 
 # Deriving Architectures
 learn_arg.add_argument('--derive_num_sample', type=int, default=100)

@@ -176,10 +176,10 @@ class Trainer(object):
                     best_dag = dag if dag else self.derive()
                     self.evaluate(best_dag,batch_size=self.args.batch_size)
                 self.save_model()
-            """
+                
             if self.epoch >= self.args.shared_decay_after:
                 utils.update_lr(self.shared_optim, self.shared_lr)
-            """
+            
         self.dag_file.close()
         
     def get_loss(self, inputs, targets, dags):
@@ -616,9 +616,9 @@ class Trainer(object):
         cur_raw_loss = utils.to_item(raw_total_loss) / self.args.log_step
 
         self.logger.info(f'| epoch {self.epoch:3d} '
-                    f'| lr {self.shared_lr:4.2f} '
-                    f'| raw loss {cur_raw_loss:.2f} '
-                    f'| loss {cur_loss:.2f} ')
+                    f'| lr {self.shared_lr:4.4f} '
+                    f'| raw loss {cur_raw_loss:.3f} '
+                    f'| loss {cur_loss:.3f} ')
         """
         # Tensorboard
         if self.tb is not None:
