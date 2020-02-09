@@ -115,7 +115,7 @@ class Controller(torch.nn.Module):
 
         # [B, L, H]
         inputs = self.static_inputs[batch_size]
-        hidden = [self.static_init_hidden[batch_size] for i in self.args.lstm_layer]
+        hidden = [self.static_init_hidden[batch_size] for i in range(self.args.lstm_layer)]
 
         activations = []
         entropies = []
