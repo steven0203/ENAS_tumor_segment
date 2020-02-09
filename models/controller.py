@@ -47,6 +47,7 @@ class Controller(torch.nn.Module):
         for i in range(self.args.lstm_layer):
             self.lstm.append(torch.nn.LSTMCell(args.controller_hid, args.controller_hid))
 
+        self._lstm=torch.nn.ModuleList(self.lstm)
 
         #self.lstm = torch.nn.LSTMCell(args.controller_hid, args.controller_hid)
 
