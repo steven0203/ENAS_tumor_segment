@@ -350,12 +350,12 @@ class Trainer(object):
 
             # moving average baseline
             if self.baseline is None:
-                baseline = rewards
+                self.baseline = rewards
             else:
                 decay = self.args.ema_baseline_decay
-                baseline = decay * baseline + (1 - decay) * rewards
+                self.baseline = decay * self.baseline + (1 - decay) * rewards
 
-            adv = rewards - baseline
+            adv = rewards - self.baseline
             adv_history.append(adv)
 
             # policy loss
