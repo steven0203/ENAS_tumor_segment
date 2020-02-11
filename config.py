@@ -24,7 +24,7 @@ net_arg.add_argument('--num_blocks', type=int, default=2)
 net_arg.add_argument('--tie_weights', type=str2bool, default=True)
 net_arg.add_argument('--controller_hid', type=int, default=100)
 net_arg.add_argument('--multi_layer', type=str2bool, default=True)
-net_arg.add_argument('--lstm_layer',type=int,default=2)
+net_arg.add_argument('--lstm_layer',type=int,default=1)
 
 net_arg.add_argument('--shared_cnn_types', type=eval,
                      default="['3x3x3', '3x3x3 dilation 2', '3x3x3 dilation 3', 'avg pool', 'identity']")
@@ -64,7 +64,7 @@ learn_arg.add_argument('--reward_c', type=int, default=80,
 # NOTE(brendan): irrelevant for actor critic.
 learn_arg.add_argument('--ema_baseline_decay', type=float, default=0.95) # TODO: very important
 learn_arg.add_argument('--discount', type=float, default=1.0) # TODO
-learn_arg.add_argument('--controller_max_step', type=int, default=50,
+learn_arg.add_argument('--controller_max_step', type=int, default=30,
                        help='step for controller parameters')
 learn_arg.add_argument('--controller_optim', type=str, default='adam')
 learn_arg.add_argument('--controller_lr', type=float, default=3.5e-4,
@@ -93,7 +93,7 @@ learn_arg.add_argument('--shared_decay_after', type=float, default=15)
 learn_arg.add_argument('--shared_l2_reg', type=float, default=5e-5)
 
 # Deriving Architectures
-learn_arg.add_argument('--derive_num_sample', type=int, default=100)
+learn_arg.add_argument('--derive_num_sample', type=int, default=20)
 
 
 # Misc

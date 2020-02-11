@@ -69,6 +69,8 @@ class Trainer(object):
         self.shared_step = 0
         self.start_epoch = 0
         self.logger=logger
+        self.baseline=None
+
         """Load dataset""" 
         self.load_dataset()
         if args.mode=='train':
@@ -157,6 +159,8 @@ class Trainer(object):
             single (bool): If True it won't train the controller and use the
                            same dag instead of derive().
         """
+        self.baseline=None
+
         dag = utils.load_dag(self.args,self.logger) if single else None
         
         if self.args.shared_initial_step > 0:
@@ -176,7 +180,7 @@ class Trainer(object):
                     best_dag = dag if dag else self.derive()
                     self.evaluate(best_dag,batch_size=self.args.batch_size)
                 self.save_model()
-                
+
             if self.epoch >= self.args.shared_decay_after:
                 utils.update_lr(self.shared_optim, self.shared_lr)
             
@@ -283,7 +287,7 @@ class Trainer(object):
         R = utils.to_item(score.data)
 
         if self.args.entropy_mode == 'reward':
-            rewards = R + self.args.entropy_coeff * entropies
+            rewards = R + self.args.entropy_coeff * entropies.mean()
         elif self.args.entropy_mode == 'regularizer':
             rewards = R * np.ones_like(entropies)
         else:
@@ -310,7 +314,6 @@ class Trainer(object):
         # self.shared.eval()
 
         avg_reward_base = None
-        baseline = None
         adv_history = []
         entropy_history = []
         reward_history = []
@@ -342,23 +345,22 @@ class Trainer(object):
             if 1 > self.args.discount > 0:
                 rewards = discount(rewards, self.args.discount)
 
-            reward_history.extend(rewards)
+            reward_history.append(rewards)
             entropy_history.extend(np_entropies)
 
             # moving average baseline
-            if baseline is None:
+            if self.baseline is None:
                 baseline = rewards
             else:
                 decay = self.args.ema_baseline_decay
                 baseline = decay * baseline + (1 - decay) * rewards
 
             adv = rewards - baseline
-            adv_history.extend(adv)
+            adv_history.append(adv)
 
             # policy loss
-            loss = -log_probs*utils.get_variable(adv,
-                                                 self.cuda,
-                                                 requires_grad=False)
+            loss = -log_probs*adv
+
             if self.args.entropy_mode == 'regularizer':
                 loss -= self.args.entropy_coeff * entropies
 
@@ -577,7 +579,8 @@ class Trainer(object):
         self.logger.info(
             f'| epoch {self.epoch:3d} | lr {self.controller_lr:.5f} '
             f'| R {avg_reward:.5f} | entropy {avg_entropy:.4f} '
-            f'| loss {cur_loss:.5f}')
+            f'| loss {cur_loss:.5f}| adv{avg_adv:.5f}'
+            f'| bl {self.baseline:.5f}')
 
         # Tensorboard
         if self.tb is not None:
@@ -616,7 +619,7 @@ class Trainer(object):
         cur_raw_loss = utils.to_item(raw_total_loss) / self.args.log_step
 
         self.logger.info(f'| epoch {self.epoch:3d} '
-                    f'| lr {self.shared_lr:4.4f} '
+                    f'| lr {self.shared_lr:.6f} '
                     f'| raw loss {cur_raw_loss:.3f} '
                     f'| loss {cur_loss:.3f} ')
         """
