@@ -282,7 +282,8 @@ class Trainer(object):
         if not isinstance(entropies, np.ndarray):
             entropies = entropies.data.cpu().numpy()
 
-        score=self.get_score(inputs,targets,dags)
+        #score=self.get_score(inputs,targets,dags)
+        score=1-self.get_loss(inputs,targets,dags)
         print(score.item())
         R = utils.to_item(score.data)
 
