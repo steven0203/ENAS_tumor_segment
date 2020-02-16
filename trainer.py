@@ -402,15 +402,12 @@ class Trainer(object):
         dice_score=0
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1,infinite=False,return_incomplete=True)
         for batch in valid_dataloader:
+            tmp=time.time()
             inputs=torch.from_numpy(batch['data']).cuda()
             targets=torch.from_numpy(batch['seg'].astype(int))
             targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
-            
-            #loss = self.get_loss(inputs,targets,dag)
-            #val_loss += utils.to_item(loss)
-            with torch.no_grad():
-                dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
-
+            dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
+            print(time.time()-tmp)
         #val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
 
