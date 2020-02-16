@@ -399,7 +399,7 @@ class Trainer(object):
         self.controller.eval()
 
         #val_loss = 0
-        #dice_score=0
+        dice_score=0
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1,infinite=False,return_incomplete=True)
         for batch in valid_dataloader:
             inputs=torch.from_numpy(batch['data']).cuda()
