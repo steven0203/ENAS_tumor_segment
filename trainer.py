@@ -408,7 +408,8 @@ class Trainer(object):
             
             #loss = self.get_loss(inputs,targets,dag)
             #val_loss += utils.to_item(loss)
-            dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
+            with torch.no_grad():
+                dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
 
         #val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
