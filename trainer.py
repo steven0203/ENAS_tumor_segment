@@ -398,26 +398,26 @@ class Trainer(object):
         self.shared.eval()
         self.controller.eval()
 
-        val_loss = 0
-        dice_score=0
+        #val_loss = 0
+        #dice_score=0
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1,infinite=False,return_incomplete=True)
         for batch in valid_dataloader:
             inputs=torch.from_numpy(batch['data']).cuda()
             targets=torch.from_numpy(batch['seg'].astype(int))
             targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
             
-            loss = self.get_loss(inputs,targets,dag)
-            val_loss += utils.to_item(loss)
+            #loss = self.get_loss(inputs,targets,dag)
+            #val_loss += utils.to_item(loss)
             dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
 
-        val_loss =val_loss/len(valid_dataloader)
+        #val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
 
         """
         self.tb.scalar_summary(f'eval/{name}_loss', val_loss, self.epoch)
         self.tb.scalar_summary(f'eval/{name}_dice_score', dice_score, self.epoch)
         """
-        self.logger.info(f'eval | loss: {val_loss:8.2f} | dice_score: {dice_score:8.2f}')
+        self.logger.info(f'eval | dice_score: {dice_score:8.2f}')
         return dice_score
 
     def derive(self, sample_num=None, valid_idx=0):
