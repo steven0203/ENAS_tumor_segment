@@ -215,8 +215,8 @@ class Trainer(object):
             outputs = self.shared(inputs, dag)
             outputs = torch.argmax(outputs,dim=1)
             outputs = torch.unsqueeze(outputs,dim=1)
+            return 0
             outputs = get_multi_class_labels(outputs,self.args.n_classes).cuda()
-            
             score += DiceScore(outputs,targets)
         
         return score/len(dags)
@@ -406,8 +406,7 @@ class Trainer(object):
             inputs=torch.from_numpy(batch['data']).cuda()
             targets=torch.from_numpy(batch['seg'].astype(int))
             targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
-            self.shared(inputs, dag[0])
-            #dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
+            dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
             print(time.time()-tmp)
         #val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
