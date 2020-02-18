@@ -28,7 +28,7 @@ net_arg.add_argument('--lstm_layer',type=int,default=1)
 
 net_arg.add_argument('--shared_cnn_types', type=eval,
                      default="['3x3x3', '3x3x3 dilation 2', '3x3x3 dilation 3', 'avg pool', 'identity']")
-net_arg.add_argument('--filters',type=int,default=12)
+net_arg.add_argument('--filters',type=int,default=8)
 net_arg.add_argument('--layers',type=int,default=4)
 net_arg.add_argument('--patch_size', type=tuple, default=(128,128,128))
 net_arg.add_argument('--n_classes',type=int,default=5)
