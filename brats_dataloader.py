@@ -159,11 +159,9 @@ def get_multi_class_labels(data, n_labels, labels=None):
     :return: binary numpy array of shape: (n_samples, n_labels, ...)
     """
     new_shape = [data.shape[0], n_labels] + list(data.shape[-3:])
-    y = torch.zeros(new_shape)
+    if  data.device.type=='cuda':
+        return torch.zeros(new_shape).cuda().scatter_(1,data,1)
+    else:
+        return torch.zeros(new_shape).scatter_(1,data,1)
+    
 
-    for label_index in range(n_labels):
-        if labels is not None:
-            y[:, label_index][data[:, 0] == labels[label_index]] = 1
-        else:
-            y[:, label_index][data[:, 0] == label_index] = 1
-    return y

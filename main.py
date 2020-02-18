@@ -12,7 +12,10 @@ import pickle
 
 def main(args):  # pylint:disable=redefined-outer-name
     """main: Entry point."""
-    logger = utils.get_logger(to_file=True)
+    if args.mode == 'train':    
+        logger = utils.get_logger(to_file=True)
+    else:
+        logger = utils.get_logger()
 
     utils.prepare_dirs(args,logger)
 

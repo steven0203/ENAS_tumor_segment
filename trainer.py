@@ -215,8 +215,7 @@ class Trainer(object):
             outputs = self.shared(inputs, dag)
             outputs = torch.argmax(outputs,dim=1)
             outputs = torch.unsqueeze(outputs,dim=1)
-            return 0
-            outputs = get_multi_class_labels(outputs,self.args.n_classes).cuda()
+            outputs = get_multi_class_labels(outputs,self.args.n_classes)
             score += DiceScore(outputs,targets)
         
         return score/len(dags)
@@ -248,8 +247,8 @@ class Trainer(object):
             
             batch=next(self.train_data_loader)
             inputs=torch.from_numpy(batch['data']).cuda()
-            targets=torch.from_numpy(batch['seg'].astype(int))
-            targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
+            targets=torch.from_numpy(batch['seg'].astype(int)).cuda()
+            targets=get_multi_class_labels(targets,n_labels=self.args.n_classes)
             
             print('epoch :',self.epoch,'step :', step, 'time:' ,time.time()-self.time)
             print(dags[0])
@@ -336,8 +335,8 @@ class Trainer(object):
             with _get_no_grad_ctx_mgr():
                 batch=next(valid_dataloader)
                 inputs=torch.from_numpy(batch['data']).cuda()
-                targets=torch.from_numpy(batch['seg'].astype(int))
-                targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
+                targets=torch.from_numpy(batch['seg'].astype(int)).cuda()
+                targets=get_multi_class_labels(targets,n_labels=self.args.n_classes)
                 #print('momery',torch.cuda.memory_allocated(device=None))
                 rewards = self.get_reward(dags,np_entropies,inputs,targets)
                 #print('after model momery',torch.cuda.memory_allocated(device=None))
@@ -402,12 +401,10 @@ class Trainer(object):
         dice_score=0
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1,infinite=False,return_incomplete=True)
         for batch in valid_dataloader:
-            tmp=time.time()
             inputs=torch.from_numpy(batch['data']).cuda()
-            targets=torch.from_numpy(batch['seg'].astype(int))
-            targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
+            targets=torch.from_numpy(batch['seg'].astype(int)).cuda()
+            targets=get_multi_class_labels(targets,n_labels=self.args.n_classes)
             dice_score +=utils.to_item(self.get_score(inputs,targets,dag))
-            print(time.time()-tmp)
         #val_loss =val_loss/len(valid_dataloader)
         dice_score=dice_score/len(valid_dataloader)
 
@@ -434,8 +431,8 @@ class Trainer(object):
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1)
         batch=next(valid_dataloader)
         inputs=torch.from_numpy(batch['data']).cuda()
-        targets=torch.from_numpy(batch['seg'].astype(int))
-        targets=get_multi_class_labels(targets,n_labels=self.args.n_classes).cuda()
+        targets=torch.from_numpy(batch['seg'].astype(int)).cuda()
+        targets=get_multi_class_labels(targets,n_labels=self.args.n_classes)
 
         self.dag_file.write('Epoch : %i \n' %self.epoch)
         for dag in dags:
@@ -472,6 +469,7 @@ class Trainer(object):
                 dice_score=self.evaluate([dag],batch_size=self.args.test_batch_size)
             print(dag)
             self.dag_file.write(str(dag)+' '+str(dice_score)+'\n')
+            self.dag_file.flush()
             if dice_score > max_score:
                 max_score=dice_score
                 best_dag = dag

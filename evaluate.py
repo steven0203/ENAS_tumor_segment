@@ -34,6 +34,7 @@ def dice_coefficient(truth, prediction):
 
 
 
+
 model_path='Isensee2017.pth'
 
 brats_preprocessed_folder='BRATS2015_precessed'
@@ -64,9 +65,8 @@ if __name__ == "__main__":
     dataloader_validation = brats_dataloader(val,batch_size, None,1,infinite=False,shuffle=False,return_incomplete=True)
 
     for batch in dataloader_validation:
+        
         inputs=torch.from_numpy(batch['data']).cuda()
-        target=torch.from_numpy(batch['seg'].astype(int))
-        target=get_multi_class_labels(target,n_labels=n_labels).cuda()
         with torch.no_grad():
             outputs=model(inputs)
             outputs=torch.argmax(outputs,dim=1).cpu().numpy()
@@ -75,5 +75,5 @@ if __name__ == "__main__":
             rows.append([dice_coefficient(func(outputs[i]),func(batch['seg'][i].astype(int))) for func in masking_functions])
             subject_ids.append(batch['names'][i])
             print(batch['names'][i])
-        df = pd.DataFrame.from_records(rows, columns=header, index=subject_ids)
-        df.to_csv(result_path)
+    df = pd.DataFrame.from_records(rows, columns=header, index=subject_ids)
+    df.to_csv(result_path)

@@ -80,8 +80,8 @@ if __name__ == "__main__":
             for i in t:
                 batch=next(tr_gen)
                 inputs=torch.from_numpy(batch['data']).cuda()
-                target=torch.from_numpy(batch['seg'].astype(int))
-                target=get_multi_class_labels(target,n_labels=n_labels).cuda()
+                target=torch.from_numpy(batch['seg'].astype(int)).cuda()
+                target=get_multi_class_labels(target,n_labels=n_labels)
                 outputs=model(inputs)
                 losses=loss(outputs,target)
 
@@ -98,8 +98,8 @@ if __name__ == "__main__":
         with tqdm(total=num_validation_batches_per_epoch) as t:
             for batch in dataloader_validation:
                 inputs=torch.from_numpy(batch['data']).cuda()
-                target=torch.from_numpy(batch['seg'].astype(int))
-                target=get_multi_class_labels(target,n_labels=n_labels).cuda()
+                target=torch.from_numpy(batch['seg'].astype(int)).cuda()
+                target=get_multi_class_labels(target,n_labels=n_labels)
                 with torch.no_grad():
                     outputs=model(inputs)
                     losses=loss(outputs,target)
