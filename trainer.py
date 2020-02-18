@@ -183,7 +183,7 @@ class Trainer(object):
 
             if self.epoch >= self.args.shared_decay_after:
                 utils.update_lr(self.shared_optim, self.shared_lr)
-            
+        self.save_model()
         self.dag_file.close()
         
     def get_loss(self, inputs, targets, dags):
