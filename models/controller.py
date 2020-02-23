@@ -99,11 +99,12 @@ class Controller(torch.nn.Module):
         logits = self.decoders[block_idx](hx)
 
         logits /= self.args.softmax_temperature
-
+        """
         # exploration
         if self.args.mode == 'train':
             logits = (self.args.tanh_c*F.tanh(logits))
-
+        """
+        logits = self.args.tanh_c*F.tanh(logits)
         return logits, return_hidden
 
     def sample(self, batch_size=1, with_details=False, save_dir=None):
