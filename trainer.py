@@ -109,9 +109,9 @@ class Trainer(object):
         for i,action in enumerate(self.args.shared_cnn_types):
             cnn_type_index[action]=i
         if self.args.use_ref:
-            self.ref_arch_num=self.args.ref_arch.copy()
+            self.ref_arch_num=[]
             for i,block in enumerate(self.args.ref_arch):
-                self.ref_arch_num[i][1]=cnn_type_index[block[1]]
+                self.ref_arch_num.append([block[0],cnn_type_index[block[1]]])
             self.ref_arch_num=np.array(self.ref_arch_num)
             self.ref_arch_num=self.ref_arch_num.reshape(1,2*len(self.ref_arch_num))
 
