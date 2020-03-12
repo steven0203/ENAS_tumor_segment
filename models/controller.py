@@ -212,7 +212,9 @@ class Controller(torch.nn.Module):
                 entropy = -(log_prob * probs).sum(1, keepdim=False)
                 index = layer*(4*self.args.num_blocks)+block_idx
                 action = ref_net[:,index]
-                selected_log_prob = log_prob.gather(1, utils.get_variable(action,self.args.cuda, requires_grad=False))
+                action= torch.Tensor(action).long().unsqueeze(1)
+                action=utils.get_variable(action,self.args.cuda, requires_grad=False)
+                selected_log_prob = log_prob.gather(1,action)
                 entropies.append(entropy)
                 log_probs.append(selected_log_prob[:, 0])
 

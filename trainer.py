@@ -250,7 +250,6 @@ class Trainer(object):
         self.controller.eval()
         raw_total_loss = 0
         total_loss = 0
-
         for step in range(self.num_batches_per_epoch):
             dags = dag if dag else self.controller.sample(
                 self.args.shared_num_sample)
@@ -336,7 +335,7 @@ class Trainer(object):
         print('Train Controller:')
         for step in range(self.args.controller_max_step):
             # sample models
-            if self.args.use_ref and self.args.ref_controller_num:
+            if self.args.use_ref and step<self.args.ref_controller_num:
                 dags=[self.args.ref_arch]
                 log_probs, entropies=self.controller.forward_with_ref(self.ref_arch_num)
             else:

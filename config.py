@@ -114,7 +114,7 @@ misc_arg.add_argument('--loss', type=str, default='MulticlassDiceLoss')
 
 #Reference Network
 ref_net_arg=add_argument_group('Reference Network')
-ref_net_arg.add_argument('--use_ref',type=str2bool,default=False)
+ref_net_arg.add_argument('--use_ref',type=str2bool,default=True)
 ref_net_arg.add_argument('--ref_arch',type=eval,default="[[0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'], \
                                                          [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
                                                          [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
