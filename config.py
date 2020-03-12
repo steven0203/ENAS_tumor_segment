@@ -24,7 +24,7 @@ net_arg.add_argument('--num_blocks', type=int, default=2)
 net_arg.add_argument('--tie_weights', type=str2bool, default=True)
 net_arg.add_argument('--controller_hid', type=int, default=100)
 net_arg.add_argument('--multi_layer', type=str2bool, default=True)
-net_arg.add_argument('--lstm_layer',type=int,default=1)
+net_arg.add_argument('--lstm_layer',type=int,default=2)
 
 net_arg.add_argument('--shared_cnn_types', type=eval,
                      default="['3x3x3', '3x3x3 dilation 2', '3x3x3 dilation 3', 'avg pool', 'identity']")
@@ -112,6 +112,16 @@ misc_arg.add_argument('--dag_path', type=str, default='')
 misc_arg.add_argument('--dag_log', type=str, default='dags.log')
 misc_arg.add_argument('--loss', type=str, default='MulticlassDiceLoss')
 
+#Reference Network
+ref_net_arg=add_argument_group('Reference Network')
+ref_net_arg.add_argument('--use_ref',type=str2bool,default=False)
+ref_net_arg.add_argument('--ref_arch',type=eval,default="[[0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'], \
+                                                         [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
+                                                         [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
+                                                         [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
+                                                         [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity']]")
+ref_net_arg.add_argument('--ref_model_num',type=int,default=5)
+ref_net_arg.add_argument('--ref_controller_num',type=int,default=2)
 
 def get_args():
     """Parses all of the arguments above, which mostly correspond to the

@@ -105,6 +105,16 @@ class Trainer(object):
         self.time=time.time()
         self.dag_file=open(self.args.model_dir+'/'+self.args.mode+'_dag.log','a')
 
+        cnn_type_index={}
+        for i,action in enumerate(self.args.shared_cnn_types):
+            cnn_type_index[action]=i
+        if self.args.use_ref:
+            self.ref_arch_num=self.args.ref_arch
+            for i,block in enumerate(self.args.ref_arch):
+                self.ref_arch_num[i][1]=cnn_type_index[block[1]]
+            self.ref_arch_num=np.array(self.ref_arch_num)
+            self.ref_arch_num=self.ref_arch_num.reshape(1,2*len(self.ref_arch_num))
+
     def load_dataset(self):
         train = get_file_list(self.args.data_path,self.args.train_ids_path)
         val = get_file_list(self.args.data_path,self.args.valid_ids_path)
@@ -244,7 +254,9 @@ class Trainer(object):
         for step in range(self.num_batches_per_epoch):
             dags = dag if dag else self.controller.sample(
                 self.args.shared_num_sample)
-            
+            if self.args.use_ref and step<self.args.ref_model_num:
+                dags=[self.args.ref_arch]
+
             batch=next(self.train_data_loader)
             inputs=torch.from_numpy(batch['data']).cuda()
             targets=torch.from_numpy(batch['seg'].astype(int)).cuda()
@@ -312,7 +324,6 @@ class Trainer(object):
         # TODO(brendan): Why can't we call shared.eval() here? Leads to loss
         # being uniformly zero for the controller.
         # self.shared.eval()
-
         avg_reward_base = None
         adv_history = []
         entropy_history = []
@@ -325,9 +336,13 @@ class Trainer(object):
         print('Train Controller:')
         for step in range(self.args.controller_max_step):
             # sample models
-            dags, log_probs, entropies = self.controller.sample(
-                with_details=True)
-
+            if self.args.use_ref and self.args.ref_controller_num:
+                dags=[self.args.ref_arch]
+                log_probs, entropies=self.controller.forward_with_ref(self.ref_arch_num)
+            else:
+                dags, log_probs, entropies = self.controller.sample(
+                    with_details=True)
+            
             # calculate reward
             np_entropies = entropies.data.cpu().numpy()
             # NOTE(brendan): No gradients should be backpropagated to the

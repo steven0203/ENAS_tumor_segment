@@ -99,8 +99,11 @@ class Controller(torch.nn.Module):
         logits = self.decoders[block_idx](hx)
 
         logits /= self.args.softmax_temperature
-        logits = (self.args.tanh_c*F.tanh(logits))
         
+        # exploration
+        if self.args.mode == 'train':
+            logits = (self.args.tanh_c*F.tanh(logits))
+
         return logits, return_hidden
 
     def sample(self, batch_size=1, with_details=False, save_dir=None):
@@ -128,7 +131,7 @@ class Controller(torch.nn.Module):
         else :
             layers=1
         for layer in range(layers):
-            for block_idx in range(4*(self.args.num_blocks )):
+            for block_idx in range(4*self.args.num_blocks):
                 logits, hidden = self.forward(inputs,
                                               hidden,
                                               block_idx,
@@ -183,3 +186,39 @@ class Controller(torch.nn.Module):
         return (utils.get_variable(zeros, self.args.cuda, requires_grad=False),
                 utils.get_variable(zeros.clone(), self.args.cuda, requires_grad=False))
 
+    def forward_with_ref(self,ref_net,batch_size=1):
+        if batch_size < 1:
+            raise Exception(f'Wrong batch_size: {batch_size} < 1')
+
+        # [B, L, H]
+        inputs = self.static_inputs[batch_size]
+        hidden = [self.static_init_hidden[batch_size] for i in range(self.args.lstm_layer)]
+
+        entropies = []
+        log_probs = []
+
+        if self.multi_layer:
+            layers=self.arch_layer
+        else :
+            layers=1
+        for layer in range(layers):
+            for block_idx in range(4*self.args.num_blocks):
+                logits, hidden = self.forward(inputs,
+                                              hidden,
+                                              block_idx,
+                                              is_embed=(block_idx == 0 and layer==0))
+                probs = F.softmax(logits, dim=-1)
+                log_prob = F.log_softmax(logits, dim=-1)
+                entropy = -(log_prob * probs).sum(1, keepdim=False)
+                index = layer*(4*self.args.num_blocks)+block_idx
+                action = ref_net[:,index]
+                selected_log_prob = log_prob.gather(1, utils.get_variable(action, requires_grad=False))
+                entropies.append(entropy)
+                log_probs.append(selected_log_prob[:, 0])
+                
+                inputs = utils.get_variable(
+                    action[:, 0] + sum(self.num_tokens[:block_idx]),
+                    requires_grad=False)
+
+
+        return torch.cat(log_probs), torch.cat(entropies)
