@@ -14,6 +14,7 @@ from torch.utils.data import Dataset,DataLoader
 from loss import DiceLoss,MulticlassDiceLoss,DiceScore
 from brats_dataloader import *
 from batchgenerators.dataloading import MultiThreadedAugmenter
+from batchgenerators.utilities.data_splitting import get_split_deterministic
 
 import models
 import utils
@@ -110,21 +111,35 @@ class Trainer(object):
             cnn_type_index[action]=i
         if self.args.use_ref:
             self.ref_arch_num=[]
+            ip=[]
+            action=[]
+            for i,block in enumerate(self.args.ref_arch):
+                ip.append(block[0])
+                action.append(cnn_type_index[block[1]])
+
+            for i in range(len(ip)/2):
+                self.ref_arch_num.append([ip[i],ip[i+1],action[i],action[i+1]])
+            
+            self.ref_arch_num=np.array(self.ref_arch_num)
+            self.ref_arch_num=self.ref_arch_num.reshape(1,2*len(self.ref_arch_num))
+
+            """
             for i,block in enumerate(self.args.ref_arch):
                 self.ref_arch_num.append([block[0],cnn_type_index[block[1]]])
             self.ref_arch_num=np.array(self.ref_arch_num)
             self.ref_arch_num=self.ref_arch_num.reshape(1,2*len(self.ref_arch_num))
-
+            """
     def load_dataset(self):
         train = get_file_list(self.args.data_path,self.args.train_ids_path)
-        val = get_file_list(self.args.data_path,self.args.valid_ids_path)
+        #val = get_file_list(self.args.data_path,self.args.valid_ids_path)
         
+        train,val=get_split_deterministic(train, fold=0, num_splits=5, random_state=12345)
+
         shapes = [brats_dataloader.load_patient(i)[0].shape[1:] for i in train]
         max_shape = np.max(shapes, 0)
         max_shape = list(np.max((max_shape, self.args.patch_size), 0))
 
         dataloader_train = brats_dataloader(train, self.args.batch_size, max_shape,self.args.num_threads)
-        dataloader_validation = brats_dataloader(val,self.args.batch_size, None,1)
 
         tr_transforms = get_train_transform(self.args.patch_size)
 
@@ -283,6 +298,7 @@ class Trainer(object):
                 self._summarize_shared_train(total_loss, raw_total_loss)
                 raw_total_loss = 0
                 total_loss = 0
+        self._summarize_shared_train(total_loss, raw_total_loss)
 
 
     def get_reward(self, dags, entropies,inputs,targets):
@@ -329,7 +345,6 @@ class Trainer(object):
         reward_history = []
 
         total_loss = 0
-        valid_idx = 0
 
         valid_dataloader=brats_dataloader(self.val,self.args.batch_size, None,1)
         print('Train Controller:')

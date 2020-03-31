@@ -32,9 +32,16 @@ class Controller(torch.nn.Module):
         torch.nn.Module.__init__(self)
         self.args = args
         self.num_tokens=[]
-        for idx in range(self.args.num_blocks):
-            self.num_tokens+=[idx+1,idx+1,len(args.shared_cnn_types)
-                              ,len(args.shared_cnn_types)]
+        self.arch_layer= args.layers+1
+        self.multi_layer = args.multi_layer
+        if self.multi_layer:
+            layers=self.arch_layer
+        else :
+            layers=1
+        for _ in range(layers):
+            for idx in range(self.args.num_blocks):
+                self.num_tokens+=[idx+1,idx+1,len(args.shared_cnn_types)
+                                ,len(args.shared_cnn_types)]
         self.func_names=args.shared_cnn_types
 
         num_total_tokens = sum(self.num_tokens)
@@ -44,7 +51,7 @@ class Controller(torch.nn.Module):
 
         
         self.lstm = []
-        for i in range(self.args.lstm_layer):
+        for _ in range(self.args.lstm_layer):
             self.lstm.append(torch.nn.LSTMCell(args.controller_hid, args.controller_hid))
 
         self._lstm=torch.nn.ModuleList(self.lstm)
@@ -55,9 +62,10 @@ class Controller(torch.nn.Module):
         # shared? At least for the activation functions, which all have the
         # same size.
         self.decoders = []
-        for idx, size in enumerate(self.num_tokens):
-            decoder = torch.nn.Linear(args.controller_hid, size)
-            self.decoders.append(decoder)
+        for _ in range(layers):
+            for idx, size in enumerate(self.num_tokens):
+                decoder = torch.nn.Linear(args.controller_hid, size)
+                self.decoders.append(decoder)
 
         self._decoders = torch.nn.ModuleList(self.decoders)
 
@@ -71,8 +79,6 @@ class Controller(torch.nn.Module):
                 requires_grad=False)
 
         self.static_inputs = utils.keydefaultdict(_get_default_hidden)
-        self.multi_layer = args.multi_layer
-        self.arch_layer= args.layers+1
 
     def reset_parameters(self):
         init_range = 0.1
@@ -134,7 +140,7 @@ class Controller(torch.nn.Module):
             for block_idx in range(4*self.args.num_blocks):
                 logits, hidden = self.forward(inputs,
                                               hidden,
-                                              block_idx,
+                                              layer*4*self.args.num_blocks+block_idx,
                                               is_embed=(block_idx == 0 and layer==0))
 
                 probs = F.softmax(logits, dim=-1)
@@ -154,7 +160,7 @@ class Controller(torch.nn.Module):
                 # 0,1,:previous node 2,3: function name
                 mode = block_idx % 4
                 inputs = utils.get_variable(
-                    action[:, 0] + sum(self.num_tokens[:block_idx]),
+                    action[:, 0] + sum(self.num_tokens[:layer*4*self.args.num_blocks+block_idx]),
                     requires_grad=False)
 
                 if mode == 2 or mode ==3:
@@ -205,7 +211,7 @@ class Controller(torch.nn.Module):
             for block_idx in range(4*self.args.num_blocks):
                 logits, hidden = self.forward(inputs,
                                               hidden,
-                                              block_idx,
+                                              layer*4*self.args.num_blocks+block_idx,
                                               is_embed=(block_idx == 0 and layer==0))
                 probs = F.softmax(logits, dim=-1)
                 log_prob = F.log_softmax(logits, dim=-1)
@@ -224,3 +230,6 @@ class Controller(torch.nn.Module):
 
 
         return torch.cat(log_probs), torch.cat(entropies)
+
+
+

@@ -39,7 +39,7 @@ data_arg = add_argument_group('Data')
 data_arg.add_argument('--dataset', type=str, default='tumor')
 data_arg.add_argument('--data_path', type=str, default='BRATS2015_precessed')
 data_arg.add_argument('--train_ids_path', type=str, default='train_ids.pkl')
-data_arg.add_argument('--valid_ids_path', type=str, default='valid_ids.pkl')
+#data_arg.add_argument('--valid_ids_path', type=str, default='valid_ids.pkl')
 data_arg.add_argument('--num_threads', type=int, default=8)
 
 
@@ -64,7 +64,7 @@ learn_arg.add_argument('--reward_c', type=int, default=80,
 # NOTE(brendan): irrelevant for actor critic.
 learn_arg.add_argument('--ema_baseline_decay', type=float, default=0.95) # TODO: very important
 learn_arg.add_argument('--discount', type=float, default=1.0) # TODO
-learn_arg.add_argument('--controller_max_step', type=int, default=30,
+learn_arg.add_argument('--controller_max_step', type=int, default=40,
                        help='step for controller parameters')
 learn_arg.add_argument('--controller_optim', type=str, default='adam')
 learn_arg.add_argument('--controller_lr', type=float, default=3.5e-4,
@@ -114,7 +114,7 @@ misc_arg.add_argument('--loss', type=str, default='MulticlassDiceLoss')
 
 #Reference Network
 ref_net_arg=add_argument_group('Reference Network')
-ref_net_arg.add_argument('--use_ref',type=str2bool,default=True)
+ref_net_arg.add_argument('--use_ref',type=str2bool,default=False)
 ref_net_arg.add_argument('--ref_arch',type=eval,default="[[0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'], \
                                                          [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
                                                          [0, '3x3x3'], [0, 'identity'], [1, '3x3x3'], [0, 'identity'],\
