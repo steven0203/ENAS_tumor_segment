@@ -158,7 +158,7 @@ class Unet(SharedModel):
             x=torch.cat([x,outputs[-layer-2]], dim=1) 
             ip.append(x)           
             for b in range(self.args.num_blocks):
-                left_idx,right_idx,left_action,right_action=self.get_actions(dag,self.args.layer-layer-1,b)
+                left_idx,right_idx,left_action,right_action=self.get_actions(dag,self.args.layers-layer-1,b)
                 left_ip=ip[left_idx]
                 right_ip=ip[right_idx]
                 left_out=self.up_left_block[-layer-1][left_idx][left_action](left_ip)
