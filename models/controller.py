@@ -59,7 +59,7 @@ class Controller(torch.nn.Module):
         if self.args.rnn_type=='rnn':
             self.rnn = []
             for _ in range(self.args.rnn_layer):
-                self.lstm.append(torch.nn.RNNCell(args.controller_hid, args.controller_hid))
+                self.rnn.append(torch.nn.RNNCell(args.controller_hid, args.controller_hid))
             self._rnn=torch.nn.ModuleList(self.rnn)
 
         #self.lstm = torch.nn.LSTMCell(args.controller_hid, args.controller_hid)

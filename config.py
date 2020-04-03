@@ -20,7 +20,7 @@ net_arg = add_argument_group('Network')
 net_arg.add_argument('--network_type', type=str, choices=['rnn', 'cnn','unet'], default='unet')
 
 # Controller
-net_arg.add_argument('--rnn_type',type=str,default='lstm',choices=['rnn','lstm'])
+net_arg.add_argument('--rnn_type',type=str,default='rnn',choices=['rnn','lstm'])
 net_arg.add_argument('--num_blocks', type=int, default=2)
 net_arg.add_argument('--tie_weights', type=str2bool, default=True)
 net_arg.add_argument('--controller_hid', type=int, default=100)
