@@ -49,12 +49,18 @@ class Controller(torch.nn.Module):
         self.encoder = torch.nn.Embedding(num_total_tokens,
                                           args.controller_hid)
 
-        
-        self.lstm = []
-        for _ in range(self.args.lstm_layer):
-            self.lstm.append(torch.nn.LSTMCell(args.controller_hid, args.controller_hid))
+        if self.args.rnn_type=='lstm':
+            self.lstm = []
+            for _ in range(self.args.rnn_layer):
+                self.lstm.append(torch.nn.LSTMCell(args.controller_hid, args.controller_hid))
+            self._lstm=torch.nn.ModuleList(self.lstm)
+            
 
-        self._lstm=torch.nn.ModuleList(self.lstm)
+        if self.args.rnn_type=='rnn':
+            self.rnn = []
+            for _ in range(self.args.rnn_layer):
+                self.lstm.append(torch.nn.RNNCell(args.controller_hid, args.controller_hid))
+            self._rnn=torch.nn.ModuleList(self.rnn)
 
         #self.lstm = torch.nn.LSTMCell(args.controller_hid, args.controller_hid)
 
@@ -99,9 +105,15 @@ class Controller(torch.nn.Module):
         
         return_hidden=[]
         hx=embed
-        for i in range(self.args.lstm_layer):
-            hx, cx = self.lstm[i](hx, hidden[i])
-            return_hidden.append((hx,cx))
+        if self.args.rnn_type=='lstm':
+            for i in range(self.args.rnn_layer):
+                hx, cx = self.lstm[i](hx, hidden[i])
+                return_hidden.append((hx,cx))
+        if self.args.rnn_type=='rnn':
+            for i in range(self.args.rnn_layer):
+                hx = self.rnn[i](hx, hidden[i])
+                return_hidden.append(hx)
+
         logits = self.decoders[block_idx](hx)
 
         logits /= self.args.softmax_temperature
@@ -122,7 +134,7 @@ class Controller(torch.nn.Module):
 
         # [B, L, H]
         inputs = self.static_inputs[batch_size]
-        hidden = [self.static_init_hidden[batch_size] for i in range(self.args.lstm_layer)]
+        hidden = [self.static_init_hidden[batch_size] for i in range(self.args.rnn_layer)]
 
         activations = []
         entropies = []
@@ -189,16 +201,18 @@ class Controller(torch.nn.Module):
 
     def init_hidden(self, batch_size):
         zeros = torch.zeros(batch_size, self.args.controller_hid)
-        return (utils.get_variable(zeros, self.args.cuda, requires_grad=False),
-                utils.get_variable(zeros.clone(), self.args.cuda, requires_grad=False))
-
+        if self.args.rnn_type=='lstm':
+            return (utils.get_variable(zeros, self.args.cuda, requires_grad=False),
+                    utils.get_variable(zeros.clone(), self.args.cuda, requires_grad=False))
+        if self.args.rnn_type=='rnn':
+            return utils.get_variable(zeros, self.args.cuda, requires_grad=False)
     def forward_with_ref(self,ref_net,batch_size=1):
         if batch_size < 1:
             raise Exception(f'Wrong batch_size: {batch_size} < 1')
 
         # [B, L, H]
         inputs = self.static_inputs[batch_size]
-        hidden = [self.static_init_hidden[batch_size] for i in range(self.args.lstm_layer)]
+        hidden = [self.static_init_hidden[batch_size] for i in range(self.args.rnn_layer)]
 
         entropies = []
         log_probs = []
