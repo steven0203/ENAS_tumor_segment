@@ -10,8 +10,8 @@ import math
 from batchgenerators.dataloading import MultiThreadedAugmenter
 
 
-model_path='Isensee2017.pth'
-log_path='training.log'
+model_path='Isensee2017_Brats_2015_test/Isensee2017.pth'
+log_path='Isensee2017_Brats_2015_test/training.log'
 
 brats_preprocessed_folder='BRATS2015_precessed'
 train_ids_path='train_ids.pkl'
@@ -20,7 +20,7 @@ valid_ids_path='valid_ids.pkl'
 patch_size = (128, 128, 128)
 batch_size = 2
 num_threads=8
-max_epoch=300
+max_epoch=150
 n_labels=5
 
 lr=0.0005
@@ -110,8 +110,8 @@ if __name__ == "__main__":
         print('epoch : ',epoch,'valid loss:',valid_loss/num_validation_batches_per_epoch)
         log.write('%i,%f,%f\n' % (epoch,raw_loss/num_batches_per_epoch,valid_loss/num_validation_batches_per_epoch))
         log.flush()
-        if valid_loss/num_validation_batches_per_epoch<min_loss:
+        if raw_loss/num_batches_per_epoch<min_loss:
             torch.save(model.state_dict(),model_path)
-            min_loss=valid_loss/num_validation_batches_per_epoch
+            min_loss=raw_loss/num_batches_per_epoch
         current_lr=adjust_lr(optimizer,current_lr,lr_schedule)
     log.close()
