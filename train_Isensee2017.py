@@ -110,8 +110,11 @@ if __name__ == "__main__":
         print('epoch : ',epoch,'valid loss:',valid_loss/num_validation_batches_per_epoch)
         log.write('%i,%f,%f\n' % (epoch,raw_loss/num_batches_per_epoch,valid_loss/num_validation_batches_per_epoch))
         log.flush()
+        """
         if raw_loss/num_batches_per_epoch<min_loss:
             torch.save(model.state_dict(),model_path)
             min_loss=raw_loss/num_batches_per_epoch
+        """
+        torch.save(model.state_dict(),model_path)
         current_lr=adjust_lr(optimizer,current_lr,lr_schedule)
     log.close()
