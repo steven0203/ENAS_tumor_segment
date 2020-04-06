@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 
-class Unet_3D(torch.nn.Module):
+class Unet3D(torch.nn.Module):
     def __init__(self,in_channels=4,labels=5,base_filters=30,depth=5):
         self.in_channels=in_channels
         self.labels=labels
