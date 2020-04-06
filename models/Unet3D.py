@@ -24,12 +24,14 @@ class Unet3D(torch.nn.Module):
             filters=filters*2
         
         filters=filters//2
+        channels=channels+filters
         for _ in range(depth-1):
             self.up_conv_block.append(create_conv_block(channels,filters))
             channels=filters
             self.up_conv_block.append(create_conv_block(channels,filters))
             filters=filters//2
-        
+            channels=channels+filters
+
         self.out=nn.Conv3d(channels,self.labels,1)
         self._actions=nn.ModuleList(self.down_conv_block+self.up_conv_block)
         self.reset_parameters()
