@@ -23,7 +23,7 @@ class Unet3D(torch.nn.Module):
             self.down_conv_block.append(create_conv_block(channels,filters))
             filters=filters*2
         
-        filters=filters//2
+        filters=filters//4
         channels=channels+filters
         for _ in range(depth-1):
             self.up_conv_block.append(create_conv_block(channels,filters))
