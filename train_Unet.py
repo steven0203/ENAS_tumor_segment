@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm,trange
-from models import isensee2017_model,Unet3D
+from models import isensee2017_model,Unet_3D
 from brats_dataloader import *
 import math
 from batchgenerators.dataloading import MultiThreadedAugmenter

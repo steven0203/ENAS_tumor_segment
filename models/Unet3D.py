@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 
 
-class Unet3D(torch.nn.Module):
+class Unet_3D(torch.nn.Module):
     def __init__(self,in_channels=4,labels=5,base_filters=30,depth=5):
         self.in_channels=in_channels
         self.labels=labels
@@ -22,12 +22,12 @@ class Unet3D(torch.nn.Module):
             self.down_conv_block.append(create_conv_block(channels,filters))
             filters=filters*2
         
-        filters=filters/2
+        filters=filters//2
         for _ in range(depth-1):
             self.up_conv_block.append(create_conv_block(channels,filters))
             channels=filters
             self.up_conv_block.append(create_conv_block(channels,filters))
-            filters=filters/2
+            filters=filters//2
         
         self.out=create_conv_block(channels,labels,1)
         self._actions=nn.ModuleList(self.down_conv_block+self.up_conv_block)
