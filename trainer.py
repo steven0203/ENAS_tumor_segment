@@ -139,7 +139,7 @@ class Trainer(object):
         max_shape = np.max(shapes, 0)
         max_shape = list(np.max((max_shape, self.args.patch_size), 0))
 
-        dataloader_train = brats_dataloader(train, self.args.batch_size, max_shape,self.args.num_threads)
+        dataloader_train = brats_dataloader(train, self.args.batch_size, max_shape,self.args.num_threads,return_incomplete=True,infinite=False)
 
         tr_transforms = get_train_transform(self.args.patch_size)
 
@@ -265,13 +265,12 @@ class Trainer(object):
         self.controller.eval()
         raw_total_loss = 0
         total_loss = 0
-        for step in range(self.num_batches_per_epoch):
+        for step,batch in enumerate(self.train_data_loader):
             dags = dag if dag else self.controller.sample(
                 self.args.shared_num_sample)
             if self.args.use_ref and step<self.args.ref_model_num:
                 dags=[self.args.ref_arch]
 
-            batch=next(self.train_data_loader)
             inputs=torch.from_numpy(batch['data']).cuda()
             targets=torch.from_numpy(batch['seg'].astype(int)).cuda()
             targets=get_multi_class_labels(targets,n_labels=self.args.n_classes)
@@ -417,7 +416,7 @@ class Trainer(object):
 
 
 
-    def evaluate(self, dag, batch_size=1, ):
+    def evaluate(self, dag, batch_size=1):
         """Evaluate on the validation set.
 
         NOTE(brendan): We should not be using the test set to develop the
@@ -655,3 +654,5 @@ class Trainer(object):
                                    cur_loss,
                                    self.shared_step)
         """
+
+

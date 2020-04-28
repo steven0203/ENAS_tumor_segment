@@ -34,7 +34,8 @@ class Controller(torch.nn.Module):
         self.num_tokens=[]
         self.arch_layer= args.layers+1
         self.multi_layer = args.multi_layer
-        if self.multi_layer:
+        self.every_cell =args.every_cell
+        if self.multi_layer or self.every_cell:
             layers=self.arch_layer
         else :
             layers=1
@@ -42,6 +43,14 @@ class Controller(torch.nn.Module):
             for idx in range(self.args.num_blocks):
                 self.num_tokens+=[idx+1,idx+1,len(args.shared_cnn_types)
                                 ,len(args.shared_cnn_types)]
+        if self.every_cell:
+            for _ in range(layers-1):
+                for idx in range(self.args.num_blocks):
+                    self.num_tokens+=[idx+1,idx+1,len(args.shared_cnn_types)
+                                    ,len(args.shared_cnn_types)]
+
+
+    
         self.func_names=args.shared_cnn_types
 
         num_total_tokens = sum(self.num_tokens)
@@ -72,6 +81,12 @@ class Controller(torch.nn.Module):
             for idx, size in enumerate(self.num_tokens):
                 decoder = torch.nn.Linear(args.controller_hid, size)
                 self.decoders.append(decoder)
+
+        if self.every_cell:
+            for _ in range(layers-1):
+                for idx, size in enumerate(self.num_tokens):
+                    decoder = torch.nn.Linear(args.controller_hid, size)
+                    self.decoders.append(decoder)
 
         self._decoders = torch.nn.ModuleList(self.decoders)
 
@@ -114,13 +129,13 @@ class Controller(torch.nn.Module):
                 hx = self.rnn[i](hx, hidden[i])
                 return_hidden.append(hx)
 
+        if block_idx==None:
+            return hx,return_hidden
+
         logits = self.decoders[block_idx](hx)
 
         logits /= self.args.softmax_temperature
-        
-        # exploration
-        if self.args.mode == 'train':
-            logits = (self.args.tanh_c*F.tanh(logits))
+        logits = (self.args.tanh_c*F.tanh(logits))
 
         return logits, return_hidden
 
@@ -148,12 +163,15 @@ class Controller(torch.nn.Module):
             layers=self.arch_layer
         else :
             layers=1
+
+        anchor_points=[]
         for layer in range(layers):
             for block_idx in range(4*self.args.num_blocks):
+                is_embed=(block_idx%4==0)
                 logits, hidden = self.forward(inputs,
                                               hidden,
                                               layer*4*self.args.num_blocks+block_idx,
-                                              is_embed=(block_idx == 0 and layer==0))
+                                              is_embed=is_embed)
 
                 probs = F.softmax(logits, dim=-1)
                 log_prob = F.log_softmax(logits, dim=-1)
@@ -179,6 +197,51 @@ class Controller(torch.nn.Module):
                     activations.append(action[:, 0])
                 elif mode == 0 or mode ==1:
                     prev_nodes.append(action[:, 0])
+
+                if mode==3:
+                    inputs,hidden=self.forward(inputs,hidden,None,is_embed=False)
+            
+            anchor_points.append(inputs)
+        
+        del anchor_points[-1]
+        if self.every_cell:
+            for layer in range(layers-1):
+                inputs=anchor_points[-layer-1]+inputs
+                for block_idx in range(4*self.args.num_blocks):
+                    is_embed=(block_idx%4==0)
+                    logits, hidden = self.forward(inputs,
+                                                  hidden,
+                                                  layer*4*self.args.num_blocks+block_idx,
+                                                  is_embed=is_embed)
+
+                    probs = F.softmax(logits, dim=-1)
+                    log_prob = F.log_softmax(logits, dim=-1)
+                    # TODO(brendan): .mean() for entropy?
+                    entropy = -(log_prob * probs).sum(1, keepdim=False)
+
+                    action = probs.multinomial(num_samples=1).data
+                    selected_log_prob = log_prob.gather(
+                        1, utils.get_variable(action, requires_grad=False))
+
+                    # TODO(brendan): why the [:, 0] here? Should it be .squeeze(), or
+                    # .view()? Same below with `action`.
+                    entropies.append(entropy)
+                    log_probs.append(selected_log_prob[:, 0])
+
+                    # 0,1,:previous node 2,3: function name
+                    mode = block_idx % 4
+                    inputs = utils.get_variable(
+                        action[:, 0] + sum(self.num_tokens[:layer*4*self.args.num_blocks+block_idx]),
+                        requires_grad=False)
+
+                    if mode == 2 or mode ==3:
+                        activations.append(action[:, 0])
+                    elif mode == 0 or mode ==1:
+                        prev_nodes.append(action[:, 0])
+
+                    if mode==3:
+                        inputs,hidden=self.forward(inputs,hidden,None,is_embed=False)
+            
 
         prev_nodes = torch.stack(prev_nodes).transpose(0, 1)
         activations = torch.stack(activations).transpose(0, 1)
@@ -206,6 +269,10 @@ class Controller(torch.nn.Module):
                     utils.get_variable(zeros.clone(), self.args.cuda, requires_grad=False))
         if self.args.rnn_type=='rnn':
             return utils.get_variable(zeros, self.args.cuda, requires_grad=False)
+
+
+
+
     def forward_with_ref(self,ref_net,batch_size=1):
         if batch_size < 1:
             raise Exception(f'Wrong batch_size: {batch_size} < 1')

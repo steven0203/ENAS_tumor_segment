@@ -25,6 +25,7 @@ net_arg.add_argument('--num_blocks', type=int, default=2)
 net_arg.add_argument('--tie_weights', type=str2bool, default=True)
 net_arg.add_argument('--controller_hid', type=int, default=100)
 net_arg.add_argument('--multi_layer', type=str2bool, default=True)
+net_arg.add_argument('--every_cell', type=str2bool, default=True)
 net_arg.add_argument('--rnn_layer',type=int,default=2)
 
 net_arg.add_argument('--shared_cnn_types', type=eval,
