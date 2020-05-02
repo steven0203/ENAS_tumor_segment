@@ -211,7 +211,7 @@ class Controller(torch.nn.Module):
                     is_embed=(block_idx%4==0)
                     logits, hidden = self.forward(inputs,
                                                   hidden,
-                                                  layer*4*self.args.num_blocks+block_idx,
+                                                  (layers+layer)*4*self.args.num_blocks+block_idx,
                                                   is_embed=is_embed)
 
                     probs = F.softmax(logits, dim=-1)
@@ -231,7 +231,7 @@ class Controller(torch.nn.Module):
                     # 0,1,:previous node 2,3: function name
                     mode = block_idx % 4
                     inputs = utils.get_variable(
-                        action[:, 0] + sum(self.num_tokens[:layer*4*self.args.num_blocks+block_idx]),
+                        action[:, 0] + sum(self.num_tokens[:(layers+layer)*4*self.args.num_blocks+block_idx]),
                         requires_grad=False)
 
                     if mode == 2 or mode ==3:
